@@ -1,0 +1,12 @@
+.git/
+.github/
+.claude/
+node_modules/
+dist/
+store/
+data/
+logs/
+.env
+.DS_Store
+*.keys.json
+agents-sdk-docs/

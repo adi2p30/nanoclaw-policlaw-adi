@@ -1,0 +1,40 @@
+# NanoClaw — Docker Compose for the host orchestrator
+#
+# Run from the project root: docker compose up -d
+#
+# DooD path note:
+#   NanoClaw spawns sibling agent containers via the Docker socket. The bind mount
+#   paths it passes to those containers are derived from process.cwd(). For those
+#   paths to resolve on the Docker host, working_dir must equal the host project path.
+#   This is achieved by setting working_dir: ${PWD} and mounting data dirs at their
+#   host-side absolute paths (e.g. ${PWD}/groups -> ${PWD}/groups inside the container).
+
+services:
+  nanoclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Must match the host project path so sibling container bind mounts resolve correctly
+    working_dir: ${PWD}
+    volumes:
+      # Persistent data — mounted at host paths so DooD bind mounts work
+      - ${PWD}/store:${PWD}/store
+      - ${PWD}/data:${PWD}/data
+      - ${PWD}/groups:${PWD}/groups
+      # Agent runner source and container skills (read-only; sibling containers use these)
+      - ${PWD}/container:${PWD}/container:ro
+      # Docker socket — required for spawning agent containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # NanoClaw config outside the project root (mount/sender allowlists)
+      - ${HOME}/.config/nanoclaw:${HOME}/.config/nanoclaw
+    environment:
+      - HOME=${HOME}
+      # Reach OneCLI on the host from inside the container
+      - ONECLI_URL=http://host.docker.internal:10254
+    # Resolve host.docker.internal on Linux (no-op on macOS/Windows Docker Desktop)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
