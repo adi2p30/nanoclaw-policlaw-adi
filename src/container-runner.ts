@@ -248,6 +248,13 @@ async function buildContainerArgs(
     );
   }
 
+  // Pass Gemini/OpenAI credentials to container if configured on host
+  for (const key of ['GEMINI_API_KEY', 'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'GEMINI_MODEL']) {
+    if (process.env[key]) {
+      args.push('-e', `${key}=${process.env[key]}`);
+    }
+  }
+
   // Runtime-specific args for host gateway resolution
   args.push(...hostGatewayArgs());
 
